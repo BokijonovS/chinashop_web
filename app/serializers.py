@@ -14,6 +14,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['id', 'category', 'name', 'price', 'size', 'description', 'image', 'count', 'liked_by_user']
+        read_only_fields = ['liked_by_user']
 
     def get_liked_by_user(self, obj):
         request = self.context.get('request')
