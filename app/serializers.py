@@ -1,19 +1,19 @@
 from rest_framework import serializers
-from .models import Product, Category, LikeDislike, OrderItem, Order, Notification
+from .models import Product, Category, LikeDislike, OrderItem, Order, Notification, Size
 
 
-class CategorySerializer(serializers.ModelSerializer):
+class SizeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Category
-        fields = "__all__"
+        model = Size
+        fields = ['id', 'name']
 
 
 class ProductSerializer(serializers.ModelSerializer):
     liked_by_user = serializers.SerializerMethodField()
-
+    sizes = SizeSerializer(many=True)
     class Meta:
         model = Product
-        fields = ['id', 'category', 'name', 'price', 'size', 'description', 'image', 'count', 'liked_by_user']
+        fields = ['id', 'category', 'name', 'price', 'sizes', 'description', 'image', 'count', 'liked_by_user']
         read_only_fields = ['liked_by_user']
 
     def get_liked_by_user(self, obj):
@@ -26,6 +26,14 @@ class ProductSerializer(serializers.ModelSerializer):
 
         # If no authenticated user, return False (not liked by any user)
         return False
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    products = ProductSerializer(many=True, read_only=True)  # This will show products in each category
+
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'products']
 
 
 class LikeDislikeSerializer(serializers.ModelSerializer):

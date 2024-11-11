@@ -33,14 +33,20 @@ class UserLoginView(APIView):
         return Response({'message': 'Login failed'}, status=400)
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.order_by("?")
+    serializer_class = ProductSerializer
+
+
+class CategoryProductListView(generics.RetrieveAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    lookup_field = 'id'
 
 
-class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
+class CategoryListView(generics.ListAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
 
 
 class LikeProductView(APIView):

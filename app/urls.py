@@ -4,12 +4,14 @@ from rest_framework import routers
 from app import views
 
 router = routers.DefaultRouter()
-router.register(r'category', views.CategoryViewSet)
 router.register(r'product', views.ProductViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),
     path('login/', views.UserLoginView.as_view(), name='user_login'),
+
+    path('categories/<int:id>/', views.CategoryProductListView.as_view(), name='category-products'),
+    path('categories/', views.CategoryListView.as_view(), name='all-categories'),
 
     path('products/like/<int:product_id>/', views.LikeProductView.as_view(), name='like_product'),
     path('liked-products/', views.LikedProductsView.as_view(), name='liked-products'),
