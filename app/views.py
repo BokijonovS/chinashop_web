@@ -2,9 +2,10 @@ from django.contrib.auth import login
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 
-from .serializers import CategorySerializer, ProductSerializer, OrderItemSerializer, OrderSerializer, \
-    NotificationSerializer
-from .models import Product, LikeDislike, Category, Notification, Order, OrderItem
+from .serializers import CategorySerializer, ProductSerializer, \
+    NotificationSerializer, AddOrderItemSerializer, RemoveOrderItemSerializer, UpdateOrderItemSerializer, \
+    OrderSerializer, OrderItemSerializer
+from .models import Product, LikeDislike, Category, Notification, Order, OrderItem, ProductSize
 
 from rest_framework import status, viewsets, generics
 from rest_framework.response import Response
@@ -12,8 +13,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
-
-# Create your views here.
 
 
 class UserLoginView(APIView):
@@ -79,107 +78,155 @@ class LikedProductsView(generics.ListAPIView):
         user_id = self.request.user.username
         return Product.objects.filter(likedislike__user=user_id, likedislike__is_like=True)
 
-# views.py
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def add_order_item(request):
-    user = request.user
-    product_id = request.query_params.get('productid')
-    size = request.query_params.get('product-size')
+class AddOrderItemView(APIView):
+    def post(self, request):
+        user = request.user
+        product_id = request.data.get('product_id')
+        size_id = request.data.get('size_id')
+        quantity = int(request.data.get('quantity', 1))  # Default to 1 if not provided
 
-    product = Product.objects.get(id=product_id)
+        try:
+            # Get the product and size
+            product = Product.objects.get(id=product_id)
+            size = ProductSize.objects.get(id=size_id)
 
-    order, created = Order.objects.get_or_create(user=user)
+            # **Check if the requested quantity is available in stock**
+            if quantity > size.count:
+                return Response(
+                    {"message": "Not enough stock to add this quantity."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-    order_item, item_created = OrderItem.objects.get_or_create(
-        order=order, product=product, size=size,
-        defaults={'count': 1}
-    )
+            # Check if there's an active order for the user
+            order, created = Order.objects.get_or_create(user=user, is_paid=False)
 
-    if product.count < order_item.count:
-        return Response({"error": "Not enough products in stock"}, status=status.HTTP_400_BAD_REQUEST)
+            # Check if the item already exists in the order
+            existing_item = OrderItem.objects.filter(order=order, product=product, size=size).first()
 
-    if not item_created:
-        if product.count < order_item.count + order_item.count:
-            return Response({"error": "Not enough products in stock"}, status=status.HTTP_400_BAD_REQUEST)
-        order_item.count += order_item.count
-        order_item.save()
+            if existing_item:
+                # **If the product-size already exists in the order, update the quantity**
+                if quantity <= size.count:
+                    existing_item.quantity += quantity
+                    existing_item.save()
 
-    product.count -= order_item.count
-    product.save()
+                    # **Update stock in ProductSize after adding to the order**
+                    size.count -= quantity
+                    size.save()
 
-    order.calculate_total_price()
+                    return Response(OrderItemSerializer(existing_item).data, status=status.HTTP_200_OK)
+                else:
+                    return Response(
+                        {"message": "Not enough stock to add this quantity.blabla"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            else:
+                # **If it doesn't exist, create a new OrderItem**
+                if quantity <= size.count:
+                    new_order_item = OrderItem.objects.create(order=order, product=product, size=size,
+                                                              quantity=quantity)
 
-    return Response({"message": "Order item added successfully"}, status=status.HTTP_201_CREATED)
+                    # **Update stock in ProductSize after adding to the order**
+                    size.count -= quantity
+                    size.save()
 
+                    return Response(OrderItemSerializer(new_order_item).data, status=status.HTTP_201_CREATED)
+                else:
+                    return Response(
+                        {"message": "Not enough stock to add this quantity."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
 
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def remove_order_item(request):
-    user = request.user
-    product_id = request.query_params.get('productid')
-    size = request.query_params.get('product-size')
-
-    product = get_object_or_404(Product, id=product_id)
-    order = get_object_or_404(Order, user=user)
-
-    order_item = get_object_or_404(OrderItem, order=order, product=product, size=size)
-
-    product.count += 1
-    product.save()
-
-    order_item.count -= 1
-
-    if order_item.count <= 0:
-        order_item.delete()
-    else:
-        order_item.save()
-
-    if not order.items.exists():
-        order.delete()
-    else:
-        order.calculate_total_price()
-
-    return Response({"message": "Removed 1 item from the order"}, status=status.HTTP_200_OK)
+        except Product.DoesNotExist:
+            return Response({"message": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+        except ProductSize.DoesNotExist:
+            return Response({"message": "Size not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_order_items(request):
 
-    user = request.user
-    if not user or user.is_anonymous:
-        return Response({"detail": "Authentication credentials were not provided."},
-                        status=status.HTTP_401_UNAUTHORIZED)
+class RemoveOrderItemView(APIView):
+    def delete(self, request):
+        serializer = RemoveOrderItemSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.delete(serializer.validated_data)
+            return Response({"message": "OrderItem removed successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # Fetch the user's order
-    order = Order.objects.filter(user=user).first()
 
-    if not order:
-        return Response({"message": "No order found for this user"}, status=status.HTTP_404_NOT_FOUND)
+class UpdateOrderItemView(APIView):
+    def patch(self, request):
+        serializer = UpdateOrderItemSerializer(data=request.data, context={'request': request})
 
-    order_items = OrderItem.objects.filter(order=order)
+        if serializer.is_valid():
+            order_item = serializer.update(serializer.validated_data)
+            return Response({
+                "message": "OrderItem updated successfully.",
+                "order_item": {
+                    "product": order_item.product.name,
+                    "size": order_item.size.size.name,
+                    "quantity": order_item.quantity
+                }
+            }, status=status.HTTP_200_OK)
 
-    serializer = OrderItemSerializer(order_items, many=True)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    return Response(serializer.data, status=status.HTTP_200_OK)
 
-# views.py
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_order(request):
+class GetActiveOrderView(APIView):
+    def get(self, request):
+        user = request.user
 
-    user = request.user
-    if not user:
-        return Response({"detail": "Authentication credentials were not provided."}, status=401)
+        # Fetch the active (not paid) order for the user
+        try:
+            order = Order.objects.get(user=user, is_paid=False)
+        except Order.DoesNotExist:
+            return Response({"message": "No active order found."}, status=status.HTTP_404_NOT_FOUND)
 
-    order = Order.objects.filter(user=user).first()
-    if not order:
-        return Response({"message": "No order found for this user"}, status=404)
+        # Serialize the order data
+        serializer = OrderSerializer(order)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    serializer = OrderSerializer(order)
-    return Response(serializer.data, status=200)
+
+class ActiveOrderView(APIView):
+    def get(self, request):
+        # Get the active order for the user
+        order = Order.objects.filter(user=request.user, is_paid=False).first()
+
+        if not order:
+            return Response({"detail": "No active order found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Serialize the order data
+        serializer = OrderSerializer(order)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CheckoutView(APIView):
+    def post(self, request):
+        # Get the active order for the user
+        order = Order.objects.filter(user=request.user, is_paid=False).first()
+
+        if not order:
+            return Response({"detail": "No active order found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validate order - e.g., check if stock is sufficient
+        for order_item in order.items.all():
+            if order_item.quantity > order_item.size.count:
+                return Response(
+                    {"detail": f"Not enough stock for {order_item.product.name} - {order_item.size.name}."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Calculate total cost for checkout (optional step)
+        total_price = sum(item.quantity * item.product.price for item in order.items.all())
+
+        # For simplicity, assume the order passes the validation and can be paid
+        order.is_paid = True
+        order.save()
+
+        return Response(
+            {"detail": "Order successfully checked out.", "total_price": total_price},
+            status=status.HTTP_200_OK,
+        )
 
 
 class NotificationListView(generics.ListAPIView):

@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import Sum
+from django.conf import settings
 
 # Create your models here.
 
@@ -26,10 +28,13 @@ class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     price = models.FloatField()
-    sizes = models.ManyToManyField(Size, related_name='products')
+    sizes = models.ManyToManyField(Size, through='ProductSize')
     description = models.TextField()
     image = models.ImageField(upload_to='products/', null=True)
-    count = models.IntegerField(default=0)
+
+    def total_count(self):
+        total = self.productsize_set.aggregate(total=Sum('count'))['total']
+        return total if total else 0
 
     def __str__(self):
         return self.name
@@ -37,6 +42,15 @@ class Product(models.Model):
     class Meta:
         verbose_name_plural = 'Products'
         verbose_name = 'Product'
+
+
+class ProductSize(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    size = models.ForeignKey(Size, on_delete=models.CASCADE)
+    count = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"{self.product.name} - {self.size.name}"
 
 
 class LikeDislike(models.Model):
@@ -52,30 +66,38 @@ class LikeDislike(models.Model):
 
 
 class Order(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
-
-    def calculate_total_price(self):
-        # Recalculate total price by summing each OrderItem's total (product price * quantity)
-        total = sum(item.product.price * item.count for item in self.items.all())
-        self.total_price = total
-        self.save()
+    is_paid = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'Order {self.id} by {self.user.username}'
+        return f"Order #{self.id} by {self.user.username}"
 
 
-# OrderItem Model
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    size = models.CharField(max_length=10)
-    count = models.PositiveIntegerField()
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    size = models.ForeignKey('ProductSize', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
 
     def __str__(self):
-        return f'{self.quantity} of {self.product.name} (Size: {self.size})'
+        return f"{self.quantity} x {self.product.name} ({self.size.size.name})"
+
+    def save(self, *args, **kwargs):
+        # Deduct stock when adding a new OrderItem
+        if self.pk is None:
+            self.size.count -= self.quantity
+            if self.size.count < 0:
+                raise ValueError(f"Insufficient stock for {self.size.size.name} of {self.product.name}.")
+            self.size.save()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        # Restore stock when an OrderItem is deleted
+        self.size.count += self.quantity
+        self.size.save()
+        super().delete(*args, **kwargs)
 
 
 class Notification(models.Model):
@@ -85,3 +107,4 @@ class Notification(models.Model):
 
     def __str__(self):
         return self.title
+

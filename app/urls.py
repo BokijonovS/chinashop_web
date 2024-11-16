@@ -16,11 +16,11 @@ urlpatterns = [
     path('products/like/<int:product_id>/', views.LikeProductView.as_view(), name='like_product'),
     path('liked-products/', views.LikedProductsView.as_view(), name='liked-products'),
 
-    path('order/add/', views.add_order_item, name='add_order_item'),
-    path('order/remove/', views.remove_order_item, name='remove_order_item'),
+    path('order/add/', views.AddOrderItemView.as_view(), name='add_order_item'),
+    path('order/remove/', views.RemoveOrderItemView.as_view(), name='remove_order_item'),
+    path('order/update/', views.UpdateOrderItemView.as_view(), name='update_order_item'),
 
-    path('order/', views.get_order, name='get_order'),
-    path('order/items/', views.get_order_items, name='get_order_items'),
+    path('order/active/', views.GetActiveOrderView.as_view(), name='get_active_order'),
 
     path('notifications/', views.NotificationListView.as_view(), name='notifications'),
 
