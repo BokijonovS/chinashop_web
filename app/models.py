@@ -52,7 +52,6 @@ class ProductSize(models.Model):
     def __str__(self):
         return f"{self.product.name} - {self.size.name}"
 
-
 class LikeDislike(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     user = models.CharField(max_length=100)
