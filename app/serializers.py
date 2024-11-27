@@ -63,13 +63,13 @@ class AddOrderItemSerializer(serializers.ModelSerializer):
         fields = ['product', 'size', 'quantity']
 
     def validate(self, data):
-        # Validate that the size exists and belongs to the specified product
+        # Fetch the ProductSize object to validate stock
         try:
             size = ProductSize.objects.get(id=data['size'], product_id=data['product'])
         except ProductSize.DoesNotExist:
             raise serializers.ValidationError("Invalid size or product.")
 
-        # Check if enough stock is available
+        # **Fetch the latest stock value**
         if data['quantity'] > size.count:
             raise serializers.ValidationError(f"Only {size.count} items are available for this size.")
         return data
@@ -80,35 +80,35 @@ class AddOrderItemSerializer(serializers.ModelSerializer):
 
         size = ProductSize.objects.get(id=validated_data['size'])
 
+        # **Ensure you're working with the actual current stock**
+        size.refresh_from_db()
+
         # Check if the order already has this product/size combination
         existing_item = OrderItem.objects.filter(order=order, product_id=validated_data['product'], size=size).first()
 
         if existing_item:
             # Update the quantity if the item already exists in the order
-            new_quantity = existing_item.quantity + validated_data['quantity']
-            if new_quantity > size.count:
+            existing_item.quantity += validated_data['quantity']
+
+            # Validate stock again before saving
+            if existing_item.quantity > size.count:
                 raise serializers.ValidationError(f"Only {size.count} items are available for this size.")
 
-            existing_item.quantity = new_quantity
             existing_item.save()
-
+            return existing_item
         else:
-            # If no existing item, create a new OrderItem
+            # Create a new OrderItem
             if validated_data['quantity'] > size.count:
                 raise serializers.ValidationError(f"Only {size.count} items are available for this size.")
 
-            # Create a new OrderItem
-            OrderItem.objects.create(order=order, product_id=validated_data['product'], size=size,
-                                     quantity=validated_data['quantity'])
+            return OrderItem.objects.create(
+                order=order,
+                product_id=validated_data['product'],
+                size=size,
+                quantity=validated_data['quantity']
+            )
 
-        # Update the size stock only once
-        size.count -= validated_data['quantity']
-        size.save()
 
-        # Return the created/updated OrderItem
-        return existing_item if existing_item else OrderItem.objects.get(order=order,
-                                                                         product_id=validated_data['product'],
-                                                                         size=size)
 
 
 class RemoveOrderItemSerializer(serializers.Serializer):
@@ -127,6 +127,7 @@ class RemoveOrderItemSerializer(serializers.Serializer):
         order_item = OrderItem.objects.get(id=order_item_id)
         order_item.delete()
         return order_item
+
 
 
 class UpdateOrderItemSerializer(serializers.Serializer):
@@ -152,31 +153,18 @@ class UpdateOrderItemSerializer(serializers.Serializer):
         new_quantity = validated_data['quantity']
 
         order_item = OrderItem.objects.get(id=order_item_id)
-        old_quantity = order_item.quantity
         size = order_item.size
 
-        # Check if there is enough stock available for the new quantity
-        if new_quantity > size.count + old_quantity:
-            raise serializers.ValidationError(f"Only {size.count + old_quantity} items are available for this size.")
-
-        # If increasing quantity, decrease stock accordingly
-        if new_quantity > old_quantity:
-            size.count -= (new_quantity - old_quantity)
-            if size.count < 0:
-                raise serializers.ValidationError(
-                    f"Only {size.count + old_quantity} items are available for this size.")
-            size.save()
-
-        # If decreasing quantity, restore stock
-        if new_quantity < old_quantity:
-            size.count += (old_quantity - new_quantity)
-            size.save()
+        # Validate stock availability
+        if new_quantity > size.count + order_item.quantity:
+            raise serializers.ValidationError(f"Only {size.count + order_item.quantity} items are available for this size.")
 
         # Update the OrderItem quantity
         order_item.quantity = new_quantity
         order_item.save()
 
         return order_item
+
 
 
 class OrderItemSerializer(serializers.ModelSerializer):

@@ -9,13 +9,13 @@ admin.site.register(Category)
 
 @admin.register(Size)
 class SizeAdmin(admin.ModelAdmin):
-    list_display = ('name', )
+    list_display = ('id', 'name', )
 
 
 class ProductSizeInline(admin.TabularInline):
     model = ProductSize
     extra = 1  # Number of empty slots for new entries
-    fields = ['size', 'count']  # Fields to display in the inline form
+    fields = ['id', 'size', 'count']  # Fields to display in the inline form
 
 
 @admin.register(Product)

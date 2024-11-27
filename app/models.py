@@ -52,6 +52,7 @@ class ProductSize(models.Model):
     def __str__(self):
         return f"{self.product.name} - {self.size.name}"
 
+
 class LikeDislike(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     user = models.CharField(max_length=100)
@@ -83,20 +84,40 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.quantity} x {self.product.name} ({self.size.size.name})"
 
+    def clean(self):
+        """
+        Validate that there's enough stock for the specified size and quantity.
+        """
+        if self.quantity > self.size.count:
+            raise ValueError(
+                f"Not enough stock for {self.size.size.name} of {self.product.name}. "
+                f"Only {self.size.count} items available."
+            )
+
     def save(self, *args, **kwargs):
-        # Deduct stock when adding a new OrderItem
-        if self.pk is None:
-            self.size.count -= self.quantity
-            if self.size.count < 0:
-                raise ValueError(f"Insufficient stock for {self.size.size.name} of {self.product.name}.")
-            self.size.save()
+        """
+        Validate stock but don't modify it yet.
+        """
+        self.clean()  # Ensure stock validation
         super().save(*args, **kwargs)
 
-    def delete(self, *args, **kwargs):
-        # Restore stock when an OrderItem is deleted
-        self.size.count += self.quantity
-        self.size.save()
-        super().delete(*args, **kwargs)
+    @staticmethod
+    def deduct_stock(order):
+        """
+        Deduct stock for all items in the given order. Call this after payment is successful.
+        """
+        if order.is_paid:
+            raise ValueError("Stock already deducted for this order.")
+
+        for item in order.items.all():
+            if item.quantity > item.size.count:
+                raise ValueError(
+                    f"Not enough stock for {item.size.size.name} of {item.product.name}."
+                )
+            item.size.count -= item.quantity
+            item.size.save()
+        order.is_paid = True  # Mark the order as paid
+        order.save()
 
 
 class Notification(models.Model):

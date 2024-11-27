@@ -91,57 +91,43 @@ class AddOrderItemView(APIView):
             product = Product.objects.get(id=product_id)
             size = ProductSize.objects.get(id=size_id)
 
-            # **Check if the requested quantity is available in stock**
+            # Check if the requested quantity is available in stock
             if quantity > size.count:
+                print(quantity)
+                print(size.size, size.count)
                 return Response(
-                    {"message": "Not enough stock to add this quantity."},
+                    {"message": "Not enough stock to add this quantity.MF"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Check if there's an active order for the user
+            # Get or create an active (unpaid) order for the user
             order, created = Order.objects.get_or_create(user=user, is_paid=False)
 
             # Check if the item already exists in the order
             existing_item = OrderItem.objects.filter(order=order, product=product, size=size).first()
 
             if existing_item:
-                # **If the product-size already exists in the order, update the quantity**
-                if quantity <= size.count:
-                    existing_item.quantity += quantity
-                    existing_item.save()
+                # Update the quantity for the existing item
+                existing_item.quantity += quantity
+                existing_item.clean()  # Validate stock availability
+                existing_item.save()
 
-                    # **Update stock in ProductSize after adding to the order**
-                    size.count -= quantity
-                    size.save()
+                return Response(OrderItemSerializer(existing_item).data, status=status.HTTP_200_OK)
 
-                    return Response(OrderItemSerializer(existing_item).data, status=status.HTTP_200_OK)
-                else:
-                    return Response(
-                        {"message": "Not enough stock to add this quantity.blabla"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
             else:
-                # **If it doesn't exist, create a new OrderItem**
-                if quantity <= size.count:
-                    new_order_item = OrderItem.objects.create(order=order, product=product, size=size,
-                                                              quantity=quantity)
+                # Create a new OrderItem if it doesn't exist
+                new_order_item = OrderItem.objects.create(
+                    order=order, product=product, size=size, quantity=quantity
+                )
 
-                    # **Update stock in ProductSize after adding to the order**
-                    size.count -= quantity
-                    size.save()
-
-                    return Response(OrderItemSerializer(new_order_item).data, status=status.HTTP_201_CREATED)
-                else:
-                    return Response(
-                        {"message": "Not enough stock to add this quantity."},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                return Response(OrderItemSerializer(new_order_item).data, status=status.HTTP_201_CREATED)
 
         except Product.DoesNotExist:
             return Response({"message": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
         except ProductSize.DoesNotExist:
             return Response({"message": "Size not found."}, status=status.HTTP_404_NOT_FOUND)
-
+        except ValueError as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RemoveOrderItemView(APIView):
