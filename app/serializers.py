@@ -184,15 +184,12 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
-    total_price = serializers.SerializerMethodField()
+    total_price = serializers.ReadOnlyField()
 
     class Meta:
         model = Order
         fields = ['id', 'user', 'items', 'created_at', 'is_paid', 'total_price']
 
-    def get_total_price(self, obj):
-        # Calculate the total price by summing the total_price of each order item
-        return sum(item.quantity * item.product.price for item in obj.items.all())
 
 
 class NotificationSerializer(serializers.ModelSerializer):

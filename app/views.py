@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib.auth import login
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
@@ -13,6 +15,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
+
+from payme.views import PaymeWebHookAPIView
+from payme.models import PaymeTransactions
+from payme import Payme
+
+from webproject import settings
 
 
 class UserLoginView(APIView):
@@ -122,6 +130,7 @@ class AddOrderItemView(APIView):
 
                 return Response(OrderItemSerializer(new_order_item).data, status=status.HTTP_201_CREATED)
 
+
         except Product.DoesNotExist:
             return Response({"message": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
         except ProductSize.DoesNotExist:
@@ -157,9 +166,13 @@ class UpdateOrderItemView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+payme = Payme(payme_id=settings.PAYME_ID)
+
+
 class GetActiveOrderView(APIView):
     def get(self, request):
         user = request.user
+        user_id = user.username
 
         # Fetch the active (not paid) order for the user
         try:
@@ -169,50 +182,17 @@ class GetActiveOrderView(APIView):
 
         # Serialize the order data
         serializer = OrderSerializer(order)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class ActiveOrderView(APIView):
-    def get(self, request):
-        # Get the active order for the user
-        order = Order.objects.filter(user=request.user, is_paid=False).first()
-
-        if not order:
-            return Response({"detail": "No active order found."}, status=status.HTTP_404_NOT_FOUND)
-
-        # Serialize the order data
-        serializer = OrderSerializer(order)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class CheckoutView(APIView):
-    def post(self, request):
-        # Get the active order for the user
-        order = Order.objects.filter(user=request.user, is_paid=False).first()
-
-        if not order:
-            return Response({"detail": "No active order found."}, status=status.HTTP_404_NOT_FOUND)
-
-        # Validate order - e.g., check if stock is sufficient
-        for order_item in order.items.all():
-            if order_item.quantity > order_item.size.count:
-                return Response(
-                    {"detail": f"Not enough stock for {order_item.product.name} - {order_item.size.name}."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        # Calculate total cost for checkout (optional step)
-        total_price = sum(item.quantity * item.product.price for item in order.items.all())
-
-        # For simplicity, assume the order passes the validation and can be paid
-        order.is_paid = True
-        order.save()
-
-        return Response(
-            {"detail": "Order successfully checked out.", "total_price": total_price},
-            status=status.HTTP_200_OK,
+        result = {
+            'order': serializer.data,
+        }
+        price_in_sums = Decimal(serializer.data['total_price']) / Decimal('100')
+        payment_link = payme.initializer.generate_pay_link(
+            id=serializer.data['id'],
+            amount=price_in_sums,
+            return_url=f'https://darkslied.pythonanywhere.com/api/login?userid={user_id}'  #should be changed after hosting
         )
+        result['payment_link'] = payment_link
+        return Response(result, status=status.HTTP_200_OK)
 
 
 class NotificationListView(generics.ListAPIView):
@@ -221,3 +201,35 @@ class NotificationListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
 
+class PaymeCallBackAPIView(PaymeWebHookAPIView):
+    permission_classes = [AllowAny]
+
+    def handle_created_payment(self, params, result, *args, **kwargs):
+        """
+        Handle the successful payment. You can override this method
+        """
+        print(f"Transaction created for this params: {params} and cr_result: {result}")
+
+    def handle_successfully_payment(self, params, result, *args, **kwargs):
+        """
+        Handle the successful payment. You can override this method
+        """
+        transaction = PaymeTransactions.get_by_transaction_id(
+            transaction_id=params['id']
+        )
+        order = Order.objects.get(id=transaction.account.id)
+        order.deduct_stock()  #this funtion deducts the stock and removes paid items and also marks the order as paid
+
+        print(f"Transaction successfully performed for this params: {params} and performed_result: {result}")
+
+    def handle_cancelled_payment(self, params, result, *args, **kwargs):
+        """
+        Handle the cancelled payment. You can override this method
+        """
+        transaction = PaymeTransactions.get_by_transaction_id(
+            transaction_id=params['id']
+        )
+        order = Order.objects.get(id=transaction.account.id)
+        order.restore_stock()  #this function will undo all the works deduct_stock() did
+
+        print(f"Transaction cancelled for this params: {params} and cancelled_result: {result}")

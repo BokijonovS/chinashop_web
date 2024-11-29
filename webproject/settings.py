@@ -28,6 +28,8 @@ ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
+
+
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
@@ -39,6 +41,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'app',
     "rest_framework",
+    'payme',
     'drf_spectacular',
 ]
 
@@ -53,6 +56,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
+
 # CORS_ALLOWED_ORIGINS = [
 #     "https://china-shop-inky.vercel.app",
 #     "http://localhost:5173",
@@ -60,17 +65,9 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-
 CORS_ALLOW_METHODS = ["*"]
 
-
-CORS_ALLOW_HEADERS = [
-    "content-type",
-    "authorization",
-]
-
 CORS_ALLOW_CREDENTIALS = True
-
 
 ROOT_URLCONF = 'webproject.urls'
 
@@ -151,12 +148,18 @@ import os
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+PAYME_ID = "674807dc1f6211b2aec5c191"
+# PAYME_KEY = "sIxvj6tiXp8O4uc#AGHCfMjY#tIbWvdXJXzq"  # test key
+PAYME_KEY = "zISvQcGyRF5TdU3oB36IaRyIk1x?6oXBQEpO"  # real key
+PAYME_ACCOUNT_FIELD = "order_id"
+PAYME_AMOUNT_FIELD = "total_price"
+PAYME_ACCOUNT_MODEL = "app.models.Order"
+PAYME_ONE_TIME_PAYMENT = True

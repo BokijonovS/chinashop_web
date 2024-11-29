@@ -21,7 +21,11 @@ urlpatterns = [
     path('order/update/', views.UpdateOrderItemView.as_view(), name='update_order_item'),
 
     path('order/active/', views.GetActiveOrderView.as_view(), name='get_active_order'),
+    # path('checkout/', views.CheckoutView.as_view(), name='checkout'),
 
     path('notifications/', views.NotificationListView.as_view(), name='notifications'),
+
+    # payment
+    path("payme/", views.PaymeCallBackAPIView.as_view(), name='update_payment_callback'),
 
 ]

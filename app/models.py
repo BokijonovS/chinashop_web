@@ -74,6 +74,10 @@ class Order(models.Model):
     def __str__(self):
         return f"Order #{self.id} by {self.user.username}"
 
+    @property
+    def total_price(self):
+        return sum(item.quantity * item.product.price for item in self.items.all())
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
@@ -117,6 +121,21 @@ class OrderItem(models.Model):
             item.size.count -= item.quantity
             item.size.save()
         order.is_paid = True  # Mark the order as paid
+        order.save()
+
+    @staticmethod
+    def restore_stock(order):
+        """
+        Restore stock for all items in the given order. Call this if payment is canceled.
+        """
+        if not order.is_paid:
+            raise ValueError("Stock has not been deducted for this order.")
+
+        for item in order.items.all():
+            # Restore stock for each item
+            item.size.count += item.quantity
+            item.size.save()
+        order.is_paid = False  # Mark the order as unpaid
         order.save()
 
 

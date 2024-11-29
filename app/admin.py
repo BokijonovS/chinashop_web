@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Category, Notification, Size, ProductSize
+from .models import Product, Category, Notification, Size, ProductSize, Order
 
 # Register your models here.
 
@@ -20,5 +20,11 @@ class ProductSizeInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name']
+    list_display = ["id", 'name']
     inlines = [ProductSizeInline]
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'total_price', 'is_paid',)
+    list_display_links = ("id", "user")
