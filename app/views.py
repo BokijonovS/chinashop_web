@@ -28,10 +28,11 @@ from django.middleware.csrf import get_token
 class UserLoginView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request, userid):
+    def get(self, request):
+        userid = request.GET.get('userid')  # Extract the 'userid' from the query parameters
+
         if userid:
             user, created = User.objects.get_or_create(username=userid)
-
             if user:
                 login(request, user)
                 return Response({'message': f'Logged in as {userid}'}, status=200)
