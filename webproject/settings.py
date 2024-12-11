@@ -63,11 +63,18 @@ MIDDLEWARE = [
 #     "http://localhost:5173",
 # ]
 
-CORS_ALLOW_ALL_ORIGINS = True
-
-CORS_ALLOW_METHODS = ["*"]
-
+CORS_ALLOW_ALL_ORIGINS = True  # Or specify a list of allowed origins
+CORS_ALLOW_METHODS = ["GET", "POST", "OPTIONS", "PATCH", "PUT", "DELETE"]
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "accept",
+    "authorization",
+    "referer",  # Allow referer header
+]
 CORS_ALLOW_CREDENTIALS = True
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = False
 
 ROOT_URLCONF = 'webproject.urls'
 
@@ -125,7 +132,7 @@ REST_FRAMEWORK = {
         # Add other authentication classes if needed
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        # 'rest_framework.permissions.IsAuthenticated',
     ]
 }
 

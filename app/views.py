@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.contrib.auth import login
 from django.contrib.auth.models import User
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 
 from .serializers import CategorySerializer, ProductSerializer, \
@@ -21,6 +22,7 @@ from payme.models import PaymeTransactions
 from payme import Payme
 
 from webproject import settings
+from django.middleware.csrf import get_token
 
 
 class UserLoginView(APIView):
@@ -34,10 +36,25 @@ class UserLoginView(APIView):
 
             if user:
                 login(request, user)
-                return Response({'message': f'Logged in as {userid}'}, status=200)
+                # return Response({'message': f'Logged in as {userid}'}, status=200)
 
-        # If userid is not provided or login fails
-        return Response({'message': 'Login failed'}, status=400)
+        csrf_token = get_token(request)
+        print('csrf_token', csrf_token)
+
+        # Return response
+        response = JsonResponse({"message": "Logged in"})
+        response.set_cookie(
+            "csrftoken",
+            csrf_token,
+            httponly=False,  # Make it accessible in JavaScript if needed
+            samesite="Lax",  # Adjust based on your needs
+            secure=False,
+        )
+        print('response', response, response.cookies)
+        return response
+
+        # # If userid is not provided or login fails
+        # return Response({'message': 'Login failed'}, status=400)
 
 
 class ProductViewSet(viewsets.ModelViewSet):
