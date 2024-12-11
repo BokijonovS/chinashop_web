@@ -36,22 +36,22 @@ class UserLoginView(APIView):
 
             if user:
                 login(request, user)
-                # return Response({'message': f'Logged in as {userid}'}, status=200)
+                return Response({'message': f'Logged in as {userid}'}, status=200)
 
-        csrf_token = get_token(request)
-        print('csrf_token', csrf_token)
+        # csrf_token = get_token(request)
+        # print('csrf_token', csrf_token)
 
         # Return response
-        response = JsonResponse({"message": "Logged in"})
-        response.set_cookie(
-            "csrftoken",
-            csrf_token,
-            httponly=False,  # Make it accessible in JavaScript if needed
-            samesite="Lax",  # Adjust based on your needs
-            secure=False,
-        )
-        print('response', response, response.cookies)
-        return response
+        # response = JsonResponse({"message": "Logged in"})
+        # response.set_cookie(
+        #     "csrftoken",
+        #     csrf_token,
+        #     httponly=False,  # Make it accessible in JavaScript if needed
+        #     samesite="Lax",  # Adjust based on your needs
+        #     secure=False,
+        # )
+        # print('response', response, response.cookies)
+        # return response
 
         # # If userid is not provided or login fails
         # return Response({'message': 'Login failed'}, status=400)
