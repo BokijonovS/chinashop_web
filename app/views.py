@@ -28,15 +28,14 @@ from django.middleware.csrf import get_token
 class UserLoginView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request):
-        userid = request.query_params.get('userid')
-
+    def get(self, request, userid):
         if userid:
             user, created = User.objects.get_or_create(username=userid)
 
             if user:
                 login(request, user)
                 return Response({'message': f'Logged in as {userid}'}, status=200)
+        return Response({'message': 'Login failed'}, status=400)
 
         # csrf_token = get_token(request)
         # print('csrf_token', csrf_token)
