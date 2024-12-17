@@ -16,6 +16,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
+from rest_framework.authtoken.models import Token
 
 from payme.views import PaymeWebHookAPIView
 from payme.models import PaymeTransactions
@@ -29,13 +30,21 @@ class UserLoginView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        userid = request.GET.get('userid')  # Extract the 'userid' from the query parameters
+        telegram_id = request.GET.get('tg-id')  # Extract the 'userid' from the query parameters
 
-        if userid:
-            user, created = User.objects.get_or_create(username=userid)
+        if telegram_id:
+            user, created = User.objects.get_or_create(username=telegram_id)
             if user:
                 login(request, user)
-                return Response({'message': f'Logged in as {userid}'}, status=200)
+
+                # Generate or retrieve the token for the user
+                token, created = Token.objects.get_or_create(user=user)
+
+                # Send the token in the response header
+                response = Response({'message': f'Logged in as {telegram_id}'}, status=200)
+                response['Authorization'] = f'Token {token.key}'  # Add the token to the headers
+                return response
+
         return Response({'message': 'Login failed'}, status=400)
 
         # csrf_token = get_token(request)

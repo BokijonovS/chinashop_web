@@ -29,7 +29,6 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 
-
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
@@ -41,6 +40,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'app',
     "rest_framework",
+    'rest_framework.authtoken',
     'payme',
     'drf_spectacular',
 ]
@@ -55,8 +55,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-
 
 # CORS_ALLOWED_ORIGINS = [
 #     "https://china-shop-inky.vercel.app",
@@ -127,9 +125,7 @@ AUTH_PASSWORD_VALIDATORS = [
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-        # Add other authentication classes if needed
+        'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         # 'rest_framework.permissions.IsAuthenticated',
