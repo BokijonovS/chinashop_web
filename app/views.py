@@ -39,8 +39,30 @@ class UserLoginView(APIView):
 
 
         if telegram_id and name and phone_number and phone_number2:
-            user, created = User.objects.get_or_create(username=telegram_id, first_name=name,
-                                                       last_name=phone_number, email=phone_number2)
+            # user, created = User.objects.get_or_create(username=telegram_id, first_name=name,
+            #                                            last_name=phone_number, email=phone_number2)
+            try:
+                User.objects.get(username=telegram_id)
+                status = True
+
+            except:
+                status = False
+
+            if status:
+                user = User.objects.get(username=telegram_id)
+                if user.first_name != name:
+                    user.first_name = name
+                    user.save()
+                elif user.last_name != phone_number:
+                    user.last_name = phone_number
+                    user.save()
+                elif user.email != phone_number2:
+                    user.email = phone_number2
+                    user.save()
+
+            else:
+                user = User.objects.create_user(username=telegram_id, first_name=name, last_name=phone_number,
+                                                email=phone_number2)
             if user:
                 login(request, user)
 
