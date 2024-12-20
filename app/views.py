@@ -29,11 +29,18 @@ from django.middleware.csrf import get_token
 class UserLoginView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request):
-        telegram_id = request.GET.get('tg-id')  # Extract the 'userid' from the query parameters
+    #to use id: http://127.0.0.1:8000/api/login/?tg-id=123456&name=sanatbek&p-n=+998882041004&p-n2=+998330640131
 
-        if telegram_id:
-            user, created = User.objects.get_or_create(username=telegram_id)
+    def get(self, request):
+        telegram_id = request.GET.get('tg-id')
+        name = request.GET.get('name')
+        phone_number = request.GET.get('p-n')
+        phone_number2 = request.GET.get('p-n2')
+
+
+        if telegram_id and name and phone_number and phone_number2:
+            user, created = User.objects.get_or_create(username=telegram_id, first_name=name,
+                                                       last_name=phone_number, email=phone_number2)
             if user:
                 login(request, user)
 
