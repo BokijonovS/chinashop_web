@@ -21,6 +21,7 @@ from rest_framework.authtoken.models import Token
 from payme.views import PaymeWebHookAPIView
 from payme.models import PaymeTransactions
 from payme import Payme
+from payme import urls
 
 from webproject import settings
 from django.middleware.csrf import get_token
@@ -273,7 +274,7 @@ class PaymeCallBackAPIView(PaymeWebHookAPIView):
             transaction_id=params['id']
         )
         order = Order.objects.get(id=transaction.account.id)
-        order.deduct_stock()  #this funtion deducts the stock and removes paid items and also marks the order as paid
+        OrderItem.deduct_stock(order)  #this funtion deducts the stock and removes paid items and also marks the order as paid
 
         print(f"Transaction successfully performed for this params: {params} and performed_result: {result}")
 
@@ -285,6 +286,6 @@ class PaymeCallBackAPIView(PaymeWebHookAPIView):
             transaction_id=params['id']
         )
         order = Order.objects.get(id=transaction.account.id)
-        order.restore_stock()  #this function will undo all the works deduct_stock() did
+        OrderItem.restore_stock(order)  #this function will undo all the works deduct_stock() did
 
         print(f"Transaction cancelled for this params: {params} and cancelled_result: {result}")

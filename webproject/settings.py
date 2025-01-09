@@ -141,7 +141,7 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
@@ -159,9 +159,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-PAYME_ID = "674807dc1f6211b2aec5c191"
-# PAYME_KEY = "sIxvj6tiXp8O4uc#AGHCfMjY#tIbWvdXJXzq"  # test key
-PAYME_KEY = "zISvQcGyRF5TdU3oB36IaRyIk1x?6oXBQEpO"  # real key
+PAYME_ID = "676908d5ee8cf68bde7c8770"
+PAYME_KEY = "SrrmFE?XeNWU8N%d@&1%VM5OphkW1tFIBCJu"  # test key
+# PAYME_KEY = "ZOp&tIoRPrEaxCo2IZorZkdQJNHXRWdXvSCN"  # real key
 PAYME_ACCOUNT_FIELD = "order_id"
 PAYME_AMOUNT_FIELD = "total_price"
 PAYME_ACCOUNT_MODEL = "app.models.Order"

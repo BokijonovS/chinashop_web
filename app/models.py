@@ -128,8 +128,8 @@ class OrderItem(models.Model):
         """
         Restore stock for all items in the given order. Call this if payment is canceled.
         """
-        if not order.is_paid:
-            raise ValueError("Stock has not been deducted for this order.")
+        # if not order.is_paid:
+        #     raise ValueError("Stock has not been deducted for this order.")
 
         for item in order.items.all():
             # Restore stock for each item
