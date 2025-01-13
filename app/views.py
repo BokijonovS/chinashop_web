@@ -222,10 +222,10 @@ class GetActiveOrderView(APIView):
         result = {
             'order': serializer.data,
         }
-        price_in_sums = Decimal(serializer.data['total_price']) * Decimal('100')
+        # price_in_tiyins = Decimal(serializer.data['total_price']) * Decimal('100')
         payment_link = payme.initializer.generate_pay_link(
             id=serializer.data['id'],
-            amount=price_in_sums,
+            amount=serializer.data['total_price'],
             return_url=f'https://darkslied.pythonanywhere.com/api/login?tg-id={user_id}&name={user.first_name}&p-n={user.last_name}&p-n2={user.email}'  #should be changed after hosting
         )
         result['payment_link'] = payment_link
