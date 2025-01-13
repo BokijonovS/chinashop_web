@@ -226,7 +226,7 @@ class GetActiveOrderView(APIView):
         payment_link = payme.initializer.generate_pay_link(
             id=serializer.data['id'],
             amount=price_in_sums,
-            return_url=f'https://darkslied.pythonanywhere.com/api/login?userid={user_id}'  #should be changed after hosting
+            return_url=f'https://darkslied.pythonanywhere.com/api/login?tg-id={user_id}&name={user.first_name}&p-n={user.last_name}&p-n2={user.email}'  #should be changed after hosting
         )
         result['payment_link'] = payment_link
         return Response(result, status=status.HTTP_200_OK)
