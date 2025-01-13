@@ -161,7 +161,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 PAYME_ID = "676908d5ee8cf68bde7c8770"
 # PAYME_KEY = "SrrmFE?XeNWU8N%d@&1%VM5OphkW1tFIBCJu"  # test key
-PAYME_KEY = "ZOp&tIoRPrEaxCo2IZorZkdQJNHXRWdXvSCN"  # real key
+PAYME_KEY = "xJf5Ur69fxA62&Kk0dR4egqHCXdNHayMiNTw"  # real key
 PAYME_ACCOUNT_FIELD = "order_id"
 PAYME_AMOUNT_FIELD = "total_price"
 PAYME_ACCOUNT_MODEL = "app.models.Order"

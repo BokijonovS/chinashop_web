@@ -25,7 +25,7 @@ class Size(models.Model):
 
 
 class Product(models.Model):
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, related_name='products', on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     price = models.FloatField()
     sizes = models.ManyToManyField(Size, through='ProductSize')

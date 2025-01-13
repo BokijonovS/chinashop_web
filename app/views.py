@@ -10,9 +10,8 @@ from .serializers import CategorySerializer, ProductSerializer, \
     OrderSerializer, OrderItemSerializer
 from .models import Product, LikeDislike, Category, Notification, Order, OrderItem, ProductSize
 
-from rest_framework import status, viewsets, generics
+from rest_framework import status, viewsets, generics, filters
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
@@ -21,10 +20,8 @@ from rest_framework.authtoken.models import Token
 from payme.views import PaymeWebHookAPIView
 from payme.models import PaymeTransactions
 from payme import Payme
-from payme import urls
 
 from webproject import settings
-from django.middleware.csrf import get_token
 
 
 class UserLoginView(APIView):
@@ -77,33 +74,17 @@ class UserLoginView(APIView):
 
         return Response({'message': 'Login failed'}, status=400)
 
-        # csrf_token = get_token(request)
-        # print('csrf_token', csrf_token)
-
-        # Return response
-        # response = JsonResponse({"message": "Logged in"})
-        # response.set_cookie(
-        #     "csrftoken",
-        #     csrf_token,
-        #     httponly=False,  # Make it accessible in JavaScript if needed
-        #     samesite="Lax",  # Adjust based on your needs
-        #     secure=False,
-        # )
-        # print('response', response, response.cookies)
-        # return response
-
-        # # If userid is not provided or login fails
-        # return Response({'message': 'Login failed'}, status=400)
-
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.order_by("?")
     serializer_class = ProductSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name', 'description']
 
 
 class CategoryProductListView(generics.RetrieveAPIView):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
+    queryset = Category.objects.prefetch_related('products')  # Use prefetch_related for performance
+    serializer_class = CategorySerializer  # Use an updated serializer
     lookup_field = 'id'
 
 
