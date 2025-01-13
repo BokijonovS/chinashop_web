@@ -129,7 +129,6 @@ class RemoveOrderItemSerializer(serializers.Serializer):
         return order_item
 
 
-
 class UpdateOrderItemSerializer(serializers.Serializer):
     order_item_id = serializers.IntegerField()
     quantity = serializers.IntegerField()

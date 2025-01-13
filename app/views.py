@@ -222,7 +222,7 @@ class GetActiveOrderView(APIView):
         result = {
             'order': serializer.data,
         }
-        price_in_sums = Decimal(serializer.data['total_price']) / Decimal('100')
+        price_in_sums = Decimal(serializer.data['total_price']) * Decimal('100')
         payment_link = payme.initializer.generate_pay_link(
             id=serializer.data['id'],
             amount=price_in_sums,
