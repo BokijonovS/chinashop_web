@@ -31,37 +31,16 @@ class UserLoginView(APIView):
 
     def get(self, request):
         telegram_id = request.GET.get('tg-id')
-        name = request.GET.get('name')
-        phone_number = request.GET.get('p-n')
-        phone_number2 = request.GET.get('p-n2')
 
 
-        if telegram_id and name and phone_number and phone_number2:
-            # user, created = User.objects.get_or_create(username=telegram_id, first_name=name,
-            #                                            last_name=phone_number, email=phone_number2)
+        if telegram_id:
             try:
-                User.objects.get(username=telegram_id)
+                user = User.objects.get(username=telegram_id)
                 status = True
-
             except:
                 status = False
 
             if status:
-                user = User.objects.get(username=telegram_id)
-                if user.first_name != name:
-                    user.first_name = name
-                    user.save()
-                elif user.last_name != phone_number:
-                    user.last_name = phone_number
-                    user.save()
-                elif user.email != phone_number2:
-                    user.email = phone_number2
-                    user.save()
-
-            else:
-                user = User.objects.create_user(username=telegram_id, first_name=name, last_name=phone_number,
-                                                email=phone_number2)
-            if user:
                 login(request, user)
 
                 # Generate or retrieve the token for the user
