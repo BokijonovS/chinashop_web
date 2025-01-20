@@ -20,7 +20,4 @@ def main():
 
 
 if __name__ == '__main__':
-    bot_process = multiprocessing.Process(name='bot_process', target=run_bot)
-    main_process = multiprocessing.Process(name='main_process', target=main)
-    bot_process.start()
-    main_process.start()
+    main()
