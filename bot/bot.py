@@ -197,5 +197,5 @@ def change_user(message: Message, field):
 
 
 # Start the bot's polling loop
-def run_bot():
+if "__name__" == "__main__":
     bot.polling(none_stop=True)
