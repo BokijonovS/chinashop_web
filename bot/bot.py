@@ -2,14 +2,170 @@ from socket import fromfd
 from traceback import format_exc
 
 import telebot
-from .functions import get_user, create_user, update_user, check_user, name_checker
-from telebot.types import Message, ReplyKeyboardRemove
-from .keyboards import register_button, phone_button, menu_buttons, back_button, settings_buttons
+from telebot.types import Message, ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
 
 
 # Replace 'YOUR_BOT_TOKEN' with your actual bot token from BotFather
 BOT_TOKEN = '7642750809:AAGia4vhE-SE_024OcrbVBi6EKPA4yvcFU8'
 bot = telebot.TeleBot(BOT_TOKEN)
+
+
+import sqlite3
+import os
+
+def register_button():
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    btn1 = KeyboardButton("Ro'yxatdan o'tish")
+    markup.add(btn1)
+    return markup
+
+
+def phone_button():
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    btn1 = KeyboardButton("Telefon raqamni yuborish ☎️", request_contact=True)
+    btn2 = KeyboardButton("Ortga◀️")
+    markup.add(btn1, btn2)
+    return markup
+
+
+def menu_buttons(telegram_id):
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    web_app_url = f"https://darkslied.pythonanywhere.com/api/login/?tg-id={telegram_id}"
+    btn1 = KeyboardButton(
+        text="Do'konni ochish 🛍",
+        web_app=WebAppInfo(url=web_app_url)  # Add WebAppInfo for the button
+    )
+    btn2 = KeyboardButton("Sozlamalar ⚙️")
+    markup.add(btn1, btn2)
+    return markup
+
+
+def settings_buttons():
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    btn1 = KeyboardButton("Ismni o'zgartirish 🖊")
+    btn2 = KeyboardButton("Qo'shimcha raqamni o'zgartirish ☎️")
+    btn3 = KeyboardButton("Ortga◀️")
+    markup.add(btn1, btn2, btn3)
+    return markup
+
+
+def back_button():
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    btn = KeyboardButton("Ortga◀️")
+    markup.add(btn)
+    return markup
+
+def get_user(username):
+    try:
+        # Connect to the database
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../db.sqlite3')
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Execute the SQL query to fetch the user
+        cursor.execute("SELECT id, username, email, first_name, last_name FROM auth_user WHERE username = ?;", (username,))
+        user = cursor.fetchone()
+
+        # Close the connection
+        conn.close()
+
+        # Return a dictionary if the user exists
+        if user:
+            return {
+                "id": user[0],
+                "username": user[1],
+                "email": user[2],
+                "first_name": user[3],
+                "last_name": user[4],
+            }
+        else:
+            return None  # User not found
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def create_user(username, email=None, password=None, first_name=None, last_name=None):
+    try:
+        # Connect to the database
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../db.sqlite3')
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Insert the user into the database
+        cursor.execute("""
+            INSERT INTO auth_user (username, email, password, first_name, last_name, is_active, is_staff, is_superuser, date_joined)
+            VALUES (?, ?, ?, ?, ?, 1, 0, 0, datetime('now'));
+        """, (
+            username,
+            email or "",  # Convert None to ""
+            password or "",  # Convert None to ""
+            first_name or "",  # Convert None to ""
+            last_name or ""  # Convert None to ""
+        ))
+
+        # Commit the changes and close the connection
+        conn.commit()
+        conn.close()
+
+        return {"status": "success", "message": f"User '{username}' created successfully."}
+    except sqlite3.IntegrityError as e:
+        return {"status": "error", "message": "Username already exists."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def update_user(username, field, new_value):
+    try:
+        # Define the list of fields allowed to be updated
+        allowed_fields = ["email", "password", "first_name", "last_name", "is_active", "is_staff", "is_superuser"]
+
+        if field not in allowed_fields:
+            return {"status": "error", "message": f"Field '{field}' cannot be updated."}
+
+        # Connect to the database
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../db.sqlite3')
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Execute the SQL update query
+        query = f"UPDATE auth_user SET {field} = ? WHERE username = ?;"
+        cursor.execute(query, (new_value, username))
+
+        # Check if any row was affected
+        if cursor.rowcount == 0:
+            conn.close()
+            return {"status": "error", "message": f"No user found with username '{username}'."}
+
+        # Commit the changes and close the connection
+        conn.commit()
+        conn.close()
+
+        return {"status": "success",
+                "message": f"User '{username}' updated successfully. Field '{field}' set to '{new_value}'."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def check_user(user_id):
+    user = get_user(username=user_id)
+    if user['username'] and user['first_name'] and user['last_name'] and user['email']:
+        return True
+    else:
+        return False
+
+letters = "abcdefghijklmnopqrstuvwxyz '`"
+
+
+def name_checker(name):
+    name1 = str(name)
+    for i in name1:
+        if i.lower() not in letters:
+            return False
+    if name1.istitle() and len(name1) >= 4:
+        return True
+    else:
+        return False
+
 
 
 @bot.message_handler(commands=['start'])
