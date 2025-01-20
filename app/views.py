@@ -88,11 +88,11 @@ class LikeProductView(APIView):
             like.save()
 
             if like.is_like:
-                return Response({"message": "Product liked!"}, status=status.HTTP_200_OK)
+                return Response({"liked": True}, status=status.HTTP_200_OK)
             else:
-                return Response({"message": "Product unliked!"}, status=status.HTTP_200_OK)
+                return Response({"liked": False}, status=status.HTTP_200_OK)
         else:
-            return Response({"message": "Product liked!"}, status=status.HTTP_201_CREATED)
+            return Response({"liked": True}, status=status.HTTP_201_CREATED)
 
 
 class LikedProductsView(generics.ListAPIView):
