@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
-import multiprocessing
 import os
 import sys
-from bot.bot import run_bot
 
 def main():
     """Run administrative tasks."""
