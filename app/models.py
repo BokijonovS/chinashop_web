@@ -143,7 +143,7 @@ class Notification(models.Model):
     title = models.CharField(max_length=255)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    viewed_by_user = models.ManyToManyField(User, related_name='viewed_notifications', blank=True)
 
     def __str__(self):
         return self.title
-

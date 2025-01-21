@@ -27,8 +27,8 @@ from webproject import settings
 class UserLoginView(APIView):
     permission_classes = [AllowAny]
 
-    # to use it:
-    # http://127.0.0.1:8000/api/login/?tg-id=6019877843
+    #to use id: http://127.0.0.1:8000/api/login/?tg-id=123456&name=sanatbek&p-n=+998882041004&p-n2=+998330640131
+
     def get(self, request):
         telegram_id = request.GET.get('tg-id')
 
@@ -47,7 +47,9 @@ class UserLoginView(APIView):
                 token, created = Token.objects.get_or_create(user=user)
 
                 # Send the token in the response header
-                response = Response({'Authtoken': f'Token {token.key}'}, status=200)
+                response = Response({'message': f'Logged in as {telegram_id}'}, status=200)
+                response['Authorization'] = f'Token {token.key}'  # Add the token to the headers
+                print(token)
                 return response
 
         return Response({'message': 'Login failed'}, status=400)

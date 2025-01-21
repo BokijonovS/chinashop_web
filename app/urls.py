@@ -24,6 +24,7 @@ urlpatterns = [
     # path('checkout/', views.CheckoutView.as_view(), name='checkout'),
 
     path('notifications/', views.NotificationListView.as_view(), name='notifications'),
+    # path('notification/<int:notification_id>/', views.get_notification_and_mark_read, name='get_notification_and_mark_read'),
 
     # payment
     path("payme/", views.PaymeCallBackAPIView.as_view(), name='update_payment_callback'),

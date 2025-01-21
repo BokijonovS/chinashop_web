@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from rest_framework import serializers
 from .models import Product, Category, LikeDislike, OrderItem, Order, Notification, Size, ProductSize
 
@@ -192,6 +193,15 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class NotificationSerializer(serializers.ModelSerializer):
+    # Add the 'has_viewed' field which will be calculated dynamically
+    has_viewed = serializers.SerializerMethodField()
+
     class Meta:
         model = Notification
-        fields = ['id', 'title', 'message', 'created_at']
+        fields = ['id', 'title', 'message', 'created_at', 'viewed_by_user', 'has_viewed']
+
+    # This method will return True if the current user has viewed the notification, else False
+    def get_has_viewed(self, obj):
+        user = self.context.get('request').user
+        return user in obj.viewed_by_user.all()
+
