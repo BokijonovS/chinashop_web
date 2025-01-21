@@ -47,7 +47,7 @@ class UserLoginView(APIView):
                 token, created = Token.objects.get_or_create(user=user)
 
                 # Send the token in the response header
-                response = Response({'message': f'Token {token.key}'}, status=200)
+                response = Response({'Authtoken': f'Token {token.key}'}, status=200)
                 return response
 
         return Response({'message': 'Login failed'}, status=400)
