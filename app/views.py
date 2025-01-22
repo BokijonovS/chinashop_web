@@ -47,8 +47,7 @@ class UserLoginView(APIView):
                 token, created = Token.objects.get_or_create(user=user)
 
                 # Send the token in the response header
-                response = Response({'message': f'Logged in as {telegram_id}'}, status=200)
-                response['Authorization'] = f'Token {token.key}'  # Add the token to the headers
+                response = Response({'Authorization': f'Token {token.key}'}, status=200)
                 print(token)
                 return response
 
