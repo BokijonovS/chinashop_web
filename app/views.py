@@ -12,8 +12,7 @@ from .models import Product, LikeDislike, Category, Notification, Order, OrderIt
 
 from rest_framework import status, viewsets, generics, filters
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 
@@ -54,11 +53,30 @@ class UserLoginView(APIView):
         return Response({'message': 'Login failed'}, status=400)
 
 
-class ProductViewSet(viewsets.ModelViewSet):
+class ProductViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Product.objects.order_by("?")
     serializer_class = ProductSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'description']
+
+    def get_queryset(self):
+        """
+        Optionally filters the queryset by an exact category_name passed as a query parameter.
+        """
+        queryset = self.queryset
+        category_name = self.request.query_params.get('category_name')
+        if category_name:
+            queryset = queryset.filter(category__name=category_name)  # Use exact lookup
+        return queryset
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Override retrieve to get a single product by its ID.
+        """
+        product = get_object_or_404(self.queryset, pk=kwargs.get('pk'))
+        serializer = self.get_serializer(product)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CategoryProductListView(generics.RetrieveAPIView):

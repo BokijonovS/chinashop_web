@@ -4,7 +4,7 @@ from rest_framework import routers
 from app import views
 
 router = routers.DefaultRouter()
-router.register(r'product', views.ProductViewSet)
+router.register(r'products', views.ProductViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),
@@ -21,7 +21,6 @@ urlpatterns = [
     path('order/update/', views.UpdateOrderItemView.as_view(), name='update_order_item'),
 
     path('order/active/', views.GetActiveOrderView.as_view(), name='get_active_order'),
-    # path('checkout/', views.CheckoutView.as_view(), name='checkout'),
 
     path('notifications/', views.NotificationListView.as_view(), name='notifications'),
     # path('notification/<int:notification_id>/', views.get_notification_and_mark_read, name='get_notification_and_mark_read'),
