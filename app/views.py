@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 
 from .serializers import CategorySerializer, ProductSerializer, \
     NotificationSerializer, AddOrderItemSerializer, RemoveOrderItemSerializer, UpdateOrderItemSerializer, \
-    OrderSerializer, OrderItemSerializer
+    OrderSerializer, OrderItemSerializer, OrderStatusSerializer
 from .models import Product, LikeDislike, Category, Notification, Order, OrderItem, ProductSize
 
 from rest_framework import status, viewsets, generics, filters
@@ -267,3 +267,19 @@ class PaymeCallBackAPIView(PaymeWebHookAPIView):
         OrderItem.restore_stock(order)  #this function will undo all the works deduct_stock() did
 
         print(f"Transaction cancelled for this params: {params} and cancelled_result: {result}")
+
+
+class CheckPaymentStatusView(APIView):
+    def get(self, request):
+        order_id = request.GET.get('order_id')
+
+        if not order_id:
+            return Response({'error': 'Order ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            order = Order.objects.get(id=order_id)
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = OrderStatusSerializer(order)
+        return Response(serializer.data, status=status.HTTP_200_OK)

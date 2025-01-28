@@ -205,3 +205,13 @@ class NotificationSerializer(serializers.ModelSerializer):
         user = self.context.get('request').user
         return user in obj.viewed_by_user.all()
 
+
+class OrderStatusSerializer(serializers.ModelSerializer):
+    payment_status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = ['id', 'payment_status', 'total_price']
+
+    def get_payment_status(self, obj):
+        return 'success' if obj.is_paid else 'pending'

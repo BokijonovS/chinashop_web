@@ -26,6 +26,7 @@ urlpatterns = [
     # path('notification/<int:notification_id>/', views.get_notification_and_mark_read, name='get_notification_and_mark_read'),
 
     # payment
-    path("payme/", views.PaymeCallBackAPIView.as_view(), name='update_payment_callback'),
+    path("payme/", views.PaymeCallBackAPIView.as_view(), name='payment_callback'),
+    path("payme/check-status", views.CheckPaymentStatusView.as_view(), name='update_payment_callback'),
 
 ]
