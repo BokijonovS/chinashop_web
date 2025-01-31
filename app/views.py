@@ -11,6 +11,7 @@ from .serializers import CategorySerializer, ProductSerializer, \
 from .models import Product, LikeDislike, Category, Notification, Order, OrderItem, ProductSize
 
 from rest_framework import status, viewsets, generics, filters
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
@@ -283,3 +284,30 @@ class CheckPaymentStatusView(APIView):
 
         serializer = OrderStatusSerializer(order)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_notification_and_mark_read(request, notification_id):
+    # Ensure the user is authenticated
+    if not request.user.is_authenticated:
+        return Response({'detail': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    try:
+        # Fetch the notification by ID
+        notification = Notification.objects.get(id=notification_id)
+    except Notification.DoesNotExist:
+        return Response({'detail': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Check if the current user has already viewed the notification
+    has_viewed = request.user in notification.viewed_by_user.all()
+
+    # If not, mark it as viewed by the current user
+    if not has_viewed:
+        notification.viewed_by_user.add(request.user)
+        notification.save()
+
+    # Return the notification data and whether the user has viewed it
+    return Response({
+        'notification': NotificationSerializer(notification, context={'request': request}).data,
+        'has_viewed': has_viewed
+    })

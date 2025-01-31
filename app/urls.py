@@ -23,7 +23,7 @@ urlpatterns = [
     path('order/active/', views.GetActiveOrderView.as_view(), name='get_active_order'),
 
     path('notifications/', views.NotificationListView.as_view(), name='notifications'),
-    # path('notification/<int:notification_id>/', views.get_notification_and_mark_read, name='get_notification_and_mark_read'),
+    path('notification/<int:notification_id>/', views.get_notification_and_mark_read, name='get_notification_and_mark_read'),
 
     # payment
     path("payme/", views.PaymeCallBackAPIView.as_view(), name='payment_callback'),
