@@ -9,7 +9,7 @@ class ProductSizeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductSize
-        fields = ['size_name', 'count', 'is_available']
+        fields = ['id', 'size_name', 'count', 'is_available']
 
     def get_is_available(self, obj):
         return obj.count > 0  # True if count is greater than 0
