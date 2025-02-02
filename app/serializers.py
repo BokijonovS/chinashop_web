@@ -166,16 +166,33 @@ class UpdateOrderItemSerializer(serializers.Serializer):
         return order_item
 
 
+class SimpleProductSerializer(serializers.ModelSerializer):
+    """A simplified version of ProductSerializer for OrderItemSerializer"""
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'price', 'image', 'description']  # Include only necessary fields
+
+class SimpleSizeSerializer(serializers.ModelSerializer):
+    """A simplified version of SizeSerializer for OrderItemSerializer"""
+    size = serializers.CharField(source='size.name')
+    class Meta:
+        model = ProductSize
+        fields = ['id', 'size']  # Include only necessary fields
+
+
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.name')
-    size_name = serializers.CharField(source='size.size.name')
+    order_item_id = serializers.IntegerField(source='id', read_only=True)  # Add order_item_id to response
+    # product_name = serializers.CharField(source='product')
+    product = SimpleProductSerializer()
+    # size_name = serializers.CharField(source='size.size.name')
+    size = SimpleSizeSerializer()
     available_stock = serializers.IntegerField(source='size.count')
     total_price = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
-        fields = ['product_name', 'size_name', 'quantity', 'available_stock', 'total_price']
+        fields = ['order_item_id', 'product', 'size', 'quantity', 'available_stock', 'total_price']
 
     def get_total_price(self, obj):
         # Assuming your OrderItem model has a `total_price` field based on quantity * product price

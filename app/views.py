@@ -176,10 +176,17 @@ class AddOrderItemView(APIView):
 
 class RemoveOrderItemView(APIView):
     def delete(self, request):
-        serializer = RemoveOrderItemSerializer(data=request.data, context={'request': request})
+        order_item_id = request.query_params.get('order_item_id')  # Get from URL params
+
+        if not order_item_id:
+            return Response({"error": "order_item_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = RemoveOrderItemSerializer(data={'order_item_id': order_item_id}, context={'request': request})
+
         if serializer.is_valid():
             serializer.delete(serializer.validated_data)
             return Response({"message": "OrderItem removed successfully."}, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
