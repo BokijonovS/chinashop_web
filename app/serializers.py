@@ -167,10 +167,24 @@ class UpdateOrderItemSerializer(serializers.Serializer):
 
 
 class SimpleProductSerializer(serializers.ModelSerializer):
-    """A simplified version of ProductSerializer for OrderItemSerializer"""
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = Product
-        fields = ['id', 'name', 'price', 'image', 'description']  # Include only necessary fields
+        fields = ['id', 'name', 'price', 'image', 'description']
+
+    def get_image(self, obj):
+        """Return the full image URL using a fixed domain"""
+        if obj.image:
+            # Use the base domain URL, replace with your actual domain
+            base_url = "https://darkslied.pythonanywhere.com"  # Set your domain here
+            image_url = obj.image.url  # Relative image path
+
+            # Concatenate the domain with the relative image path
+            return base_url + image_url
+
+        return None
+
 
 class SimpleSizeSerializer(serializers.ModelSerializer):
     """A simplified version of SizeSerializer for OrderItemSerializer"""
