@@ -67,8 +67,13 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         """
         queryset = self.queryset
         category_name = self.request.query_params.get('category_name')
+        price_filter = self.request.query_params.get('price_filter')
         if category_name:
-            queryset = queryset.filter(category__name=category_name)  # Use exact lookup
+            queryset = queryset.filter(category__name=category_name)
+        if price_filter == 'aasc':
+            queryset = queryset.order_by('price')  # Ascending order by price
+        elif price_filter == 'desc':
+            queryset = queryset.order_by('-price')
         return queryset
 
     def retrieve(self, request, *args, **kwargs):
@@ -151,7 +156,7 @@ class AddOrderItemView(APIView):
 
             if existing_item:
                 # Update the quantity for the existing item
-                existing_item.quantity += quantity
+                existing_item.quantity == quantity
                 existing_item.clean()  # Validate stock availability
                 existing_item.save()
 
