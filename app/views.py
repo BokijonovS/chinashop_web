@@ -187,7 +187,7 @@ class RemoveOrderItemView(APIView):
             serializer.delete(serializer.validated_data)
             return Response(status=status.HTTP_410_GONE)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_204_NO_CONTENT)
 
 
 class UpdateOrderItemView(APIView):
