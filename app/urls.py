@@ -17,7 +17,7 @@ urlpatterns = [
     path('liked-products/', views.LikedProductsView.as_view(), name='liked-products'),
 
     path('order/add/', views.AddOrderItemView.as_view(), name='add_order_item'),
-    path('order/remove/', views.RemoveOrderItemView.as_view(), name='remove_order_item'),
+    path('order/remove/<int:order_item_id>', views.RemoveOrderItemView.as_view(), name='remove_order_item'),
     path('order/update/', views.UpdateOrderItemView.as_view(), name='update_order_item'),
 
     path('order/active/', views.GetActiveOrderView.as_view(), name='get_active_order'),

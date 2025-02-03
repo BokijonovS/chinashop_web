@@ -175,8 +175,8 @@ class AddOrderItemView(APIView):
 
 
 class RemoveOrderItemView(APIView):
-    def delete(self, request):
-        order_item_id = request.query_params.get('order_item_id')  # Get from URL params
+    def delete(self, request, order_item_id):
+        # order_item_id = request.query_params.get('order_item_id')  # Get from URL params
 
         if not order_item_id:
             return Response({"error": "order_item_id is required"}, status=status.HTTP_400_BAD_REQUEST)
