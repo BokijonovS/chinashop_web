@@ -188,10 +188,10 @@ class SimpleProductSerializer(serializers.ModelSerializer):
 
 class SimpleSizeSerializer(serializers.ModelSerializer):
     """A simplified version of SizeSerializer for OrderItemSerializer"""
-    size = serializers.CharField(source='size.name')
+    size_name = serializers.CharField(source='size.name')
     class Meta:
         model = ProductSize
-        fields = ['id', 'size']  # Include only necessary fields
+        fields = ['id', 'size_name']  # Include only necessary fields
 
 
 
