@@ -185,7 +185,7 @@ class RemoveOrderItemView(APIView):
 
         if serializer.is_valid():
             serializer.delete(serializer.validated_data)
-            return Response({"message": "OrderItem removed successfully."}, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_410_GONE)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
